@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка файла DICOM</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', path='script.js') }}"></script>
+</head>
+<body>
+    <div class="upload-container">
+        <h1>Загрузите файл DICOM</h1>
+        <div class="upload-area" id="upload-area">
+            <p>Перетащите файл сюда или выберите файл с компьютера</p>
+            <input type="file" id="file-input" />
+        </div>
+        <div id="upload-status"></div>
+    </div>
+</body>
+</html>

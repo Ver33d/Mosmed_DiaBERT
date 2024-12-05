@@ -1,0 +1,31 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.upload-container {
+    text-align: center;
+    width: 300px;
+}
+
+.upload-area {
+    border: 2px dashed #007bff;
+    padding: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-area:hover {
+    background-color: #f0f0f0;
+}
+
+#upload-status {
+    margin-top: 20px;
+    font-size: 16px;
+    color: green;
+}
