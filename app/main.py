@@ -3,8 +3,11 @@ import pydicom  # Для проверки DICOM
 import PyPDF2  # Для проверки PDF
 import torch
 import numpy as np
+import json
 import cv2
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi.responses import JSONResponse
+from typing import List
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -19,13 +22,13 @@ app = FastAPI()
 # Подключаем шаблоны Jinja2
 templates = Jinja2Templates(directory="templates")
 
-# Настройка папок для хранения файлов
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
+
 
 # Подключаем статические файлы (CSS и JS)
-static_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-app.mount("/static", StaticFiles(directory=static_path), name="static")
+app.mount("/static", StaticFiles(directory='static'), name="static")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Путь для хранения загруженных файлов
 UPLOAD_FOLDER = 'uploaded_files'
@@ -146,6 +149,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     # Сохраняем файл на сервере
     with open(file_path, "wb") as f:
+        print("file_path 1 ",file_path)
         f.write(await file.read())
 
     # Обработка форматов
@@ -163,12 +167,15 @@ async def upload_file(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail=f"Ошибка при обработке DICOM: {str(e)}")
 
         # Сохраняем изображение как PNG в папку uploads
-        png_filename = os.path.join(UPLOAD_DIR, f"{file.filename.split('.')[0]}.png")
-        pil_image.save(png_filename, format="PNG")
+        png_filename = os.path.join("../uploads", f"{file.filename.split('.')[0]}.png")
+        pil_image.save(os.path.join(UPLOAD_DIR, f"{file.filename.split('.')[0]}.png"), format="PNG")
 
-        # Преобразуем изображение в тензор (если нужно)
+        # Преобразуем изображение в тензор
         image_processor = ImageProcessor()
         tensor_image = image_processor(pil_image)
+
+        png_file_path = png_filename
+        print(" png_filename", png_filename)
 
     elif file.filename.lower().endswith('.pdf'):
         if not is_valid_pdf(file_path):
@@ -178,4 +185,38 @@ async def upload_file(file: UploadFile = File(...)):
         os.remove(file_path)  # Удаляем файл с неподдерживаемым форматом
         raise HTTPException(status_code=400, detail="Ошибка: Неподдерживаемый формат файла.")
 
-    return {"message": f"Файл {file.filename} успешно загружен!"}
+    return {"message": f"Файл успешно загружен!", "image_path": png_filename} #{file.filename}
+
+
+# Эндпоинт для обработки изображения
+@app.post("/process/")
+async def process_image(file: UploadFile = File(...), options: List[str] = Form(...)):
+    # Получаем список выбранных флажков и файл
+    uploaded_file_path = os.path.join(UPLOAD_DIR, file.filename)
+    print("uploaded_file_path ", uploaded_file_path)
+    # with open(uploaded_file_path, "wb") as f:
+    #     f.write(await file.read())
+    options = options[0]
+    options = json.loads(options)
+    print("options ", options)
+
+    if options[0] == "on":
+        print("Обработка классификации перелома ключицы")
+    if options[1] == "on":
+        print("Обработка классификации наличия предметов")
+    if options[2] == "on":
+        print("Обработка сегментации ключицы")
+    if options[3] == "on":
+        print("Обработка сегментации посторонних предметов")
+    if options[4] == "on":
+        print("Обработка описания посторонних предметов")
+    if options[5] == "on":
+        print("Генерация отчета")
+
+    # Возвращаем ответ в формате JSON
+    return JSONResponse(content={"message": "Изображение успешно обработано"}, status_code=200)
+
+
+@app.get("/processed_image", response_class=HTMLResponse)
+async def processed_image(request: Request):
+    return templates.TemplateResponse("process.html", {"request": request})

@@ -4,9 +4,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Загрузка файла DICOM</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ url_for('static', path='script.js') }}"></script>
+    <style>
+     /* Основные стили для страницы */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        flex-direction: column;
+    }
+
+    /* Контейнер для загрузки файла */
+    .upload-container {
+        text-align: center;
+        width: 80%;
+        max-width: 600px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        background-color: #fff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Зона для загрузки файла */
+    .upload-area {
+        border: 2px dashed #007bff;
+        padding: 30px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-bottom: 20px;
+    }
+
+    .upload-area:hover {
+        background-color: #f0f0f0;
+    }
+
+    .upload-area p {
+        font-size: 16px;
+        color: #007bff;
+        margin: 0;
+    }
+
+    /* Статус загрузки */
+    #upload-status {
+        margin-top: 20px;
+        font-size: 16px;
+        color: green;
+    }
+
+    /* Контейнер для флажков */
+    #checkbox-container {
+        margin-top: 20px;
+        display: none;
+        text-align: left;
+        padding-left: 20px;
+    }
+
+    #checkbox-container label {
+        display: block;
+        margin: 10px 0;
+        font-size: 14px;
+    }
+
+    /* Кнопка для обработки изображения */
+    #process-image {
+        margin-top: 30px;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #process-image:hover {
+        background-color: #0056b3;
+    }
+
+    /* Контейнер для изображения */
+    #image-container {
+        margin-top: 30px;
+    }
+
+    #image-container img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 20px auto;
+    }
+    </style>
 </head>
 <body>
     <div class="upload-container">
@@ -16,6 +105,138 @@
             <input type="file" id="file-input" />
         </div>
         <div id="upload-status"></div>
+
+        <!-- Контейнер для изображения -->
+        <div id="image-container"></div>
+
+        <!-- Флажки для выбора действий -->
+        <div id="checkbox-container" style="display: none;">
+            <label><input type="checkbox" id="clavicle-fracture"> Классификация перелом ключицы</label><br>
+            <label><input type="checkbox" id="foreign-objects"> Классификация наличие предметов</label><br>
+            <label><input type="checkbox" id="clavicle-segmentation"> Сегментация ключицы</label><br>
+            <label><input type="checkbox" id="foreign-objects-segmentation"> Сегментация посторонних предметов</label><br>
+            <label><input type="checkbox" id="foreign-objects-description"> Описание посторонних предметов</label><br>
+            <label><input type="checkbox" id="generate-report"> Генерация отчёта об исследовании</label><br>
+        </div>
+
+        <!-- Кнопка для обработки изображения -->
+        <button id="process-image" style="display: none;">Обработать изображение</button>
     </div>
 </body>
+<script>
+     $(document).ready(function() {
+    const uploadArea = $('#upload-area');
+    const fileInput = $('#file-input');
+    const statusDiv = $('#upload-status');
+    const processButton = $('#process-image'); // Кнопка для обработки
+    const imageContainer = $('#image-container'); // Контейнер для изображения
+    const checkboxContainer = $('#checkbox-container'); // Контейнер с флажками
+
+    let uploadedFile; // Переменная для хранения загруженного файла
+
+    // Drag-and-drop
+    uploadArea.on('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.css('background-color', '#e0e0e0');
+    });
+
+    uploadArea.on('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.css('background-color', '#ffffff');
+    });
+
+    uploadArea.on('drop', function(e) {
+        e.preventDefault();
+        uploadArea.css('background-color', '#ffffff');
+        const file = e.originalEvent.dataTransfer.files[0];
+        handleFileUpload(file);
+    });
+
+    // File input change
+    fileInput.on('change', function(e) {
+        const file = e.target.files[0];
+        handleFileUpload(file);
+    });
+
+    function handleFileUpload(file) {
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        $.ajax({
+            url: '/upload/', // Проверьте этот URL на сервере
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                uploadedFile = file; // Сохраняем файл после успешной загрузки
+                statusDiv.text(response.message).css('color', 'green');
+                processButton.show(); // Показываем кнопку обработки
+
+                // Отображаем изображение
+                const imagePath = response.image_path;
+                console.log("imagePath:", imagePath);
+                imageContainer.html(`<img src="/${imagePath}" alt="Processed Image" />`);
+                checkboxContainer.show(); // Показываем флажки
+            },
+            error: function(xhr, status, error) {
+                const response = JSON.parse(xhr.responseText);
+                statusDiv.text(response.detail).css('color', 'red');
+            }
+        });
+    }
+
+    // Обработчик клика по кнопке для обработки изображения
+    $(document).on('click', '#process-image', function() {
+        if (!uploadedFile) return;
+
+        // Получаем выбранные флажки
+        const selectedOptions = [];
+        $('#checkbox-container input').each(function() {
+            // Если флажок выбран, добавляем его значение, иначе добавляем "off"
+            if ($(this).prop('checked')) {
+                selectedOptions.push($(this).val()); // Получаем значение выбранного флажка
+            } else {
+                selectedOptions.push('off'); // Проставляем 'off' для невыбранных флажков
+            }
+        });
+
+        // Проверка, что данные не пусты
+        if (selectedOptions.length === 0) {
+            alert("Выберите хотя бы один флажок!");
+            return;
+        }
+
+        // Сериализация в JSON и отправка
+        const optionsJson = JSON.stringify(selectedOptions);
+
+        // Отправляем запрос на сервер для обработки изображения с выбранными опциями
+        const formData = new FormData();
+        formData.append("file", uploadedFile);
+        formData.append("options", optionsJson); // Отправляем выбранные флажки как строку JSON
+
+        $.ajax({
+            url: '/process/', // Путь для обработки изображения
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                statusDiv.text(response.message).css('color', 'green');
+                // Дополнительные действия после успешной обработки
+<!--                imageContainer.html(`<img src="${response.image_path}" alt="Processed Image" />`);-->
+<!--                console.log("Обработанные флажки:", response.results); // Логируем результаты обработки-->
+                // Редирект на другую страницу после успешной обработки
+                window.location.href = "/processed_image"; // Переход на страницу с результатами обработки
+            },
+            error: function(xhr, status, error) {
+                const response = JSON.parse(xhr.responseText);
+                statusDiv.text(response.detail).css('color', 'red');
+            }
+        });
+    });
+});
+</script>
 </html>
