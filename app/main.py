@@ -1,15 +1,23 @@
+import os
+import pydicom  # Для проверки DICOM
+import PyPDF2  # Для проверки PDF
+import torch
+import numpy as np
+import cv2
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import os
-import pydicom  # Для проверки DICOM
-import PyPDF2  # Для проверки PDF
+from pydicom import FileDataset
+from PIL import Image
+
+
+cv2.setNumThreads(0)
 
 app = FastAPI()
 
 # Подключаем шаблоны Jinja2
-templates = Jinja2Templates(directory="templates")  # Укажите папку с вашими HTML шаблонами
+templates = Jinja2Templates(directory="templates")
 
 # Настройка папок для хранения файлов
 UPLOAD_DIR = "uploads"
@@ -21,6 +29,7 @@ app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 # Путь для хранения загруженных файлов
 UPLOAD_FOLDER = 'uploaded_files'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 # Проверка на правильность формата DICOM
@@ -42,6 +51,85 @@ def is_valid_pdf(file_path: str) -> bool:
         return False
 
 
+class ImageProcessor:
+    image_size = 518, 518
+    image_mean = 0.5
+    image_std = 0.2865
+
+    def __call__(self, image: Image):  # -> torch.tensor()
+        """Переводит изображение из формата PIL.Image в формат torch.Tensor.
+
+        Args:
+            image (Image): Изображение в формате PIL (grayscale).
+
+        Returns:
+            torch.Tensor: Тензор размера (1, 3, H, W).
+        """
+        # PIL -> numpy
+        image = np.array(image)
+        print(torch.__version__)
+        # resize
+        if image.shape != self.image_size:
+            image = cv2.resize(image, self.image_size, interpolation=cv2.INTER_AREA)
+
+        # to (0, 1) range
+        image = image.astype('float32') / 255
+
+        # normalization
+        image = (image - self.image_mean) / self.image_std
+
+        # grayscale -> to rgb
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+
+        # HWC -> CHW
+        image = np.moveaxis(image, -1, 0)
+
+        # numpy -> torch
+        image = torch.from_numpy(image)
+
+        # add batch dim
+        image = image.unsqueeze(0)
+
+        return image
+
+    @staticmethod
+    def preprocess_dicom(dicom: FileDataset) -> Image:
+        """Извлекает изображение из DICOM объекта, применяет гистограммную эквализацию,
+        изменяет размер изображения и преобразует в формат PIL.
+
+        Args:
+            dicom (FileDataset):
+                Объект pydicom.FileDataset, обычно получаемый с помощью функции pydicom.dcmread.
+
+        Returns:
+            Image:
+                Предобработанное изображение в формате PIL.
+        """
+        # dicom -> numpy
+        image: np.ndarray = dicom.pixel_array
+
+        # инвертируем пиксельные значения, если нужно
+        if dicom.PhotometricInterpretation == 'MONOCHROME1':
+            image = image.max() - image
+
+        # переводим в uint8
+        a, b = image.min(), image.max()
+        if a == b:
+            raise ValueError('Входное изображение содержит только одинаковые значения (image.min() == image.max())')
+        image = ((image - a) / (b - a) * 255).astype('uint8')
+
+        # эквализация гистограммы
+        image = cv2.equalizeHist(image)
+
+        # изменение размера
+        image = cv2.resize(image, ImageProcessor.image_size, interpolation=cv2.INTER_AREA)
+
+        # numpy -> PIL
+        image = Image.fromarray(image)
+
+        return image
+
+
 # Главная страница с формой загрузки
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -60,11 +148,28 @@ async def upload_file(file: UploadFile = File(...)):
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
-    # Определение формата файла
+    # Обработка форматов
     if file.filename.lower().endswith('.dcm'):
         if not is_valid_dicom(file_path):
             os.remove(file_path)  # Удаляем неверный файл
             raise HTTPException(status_code=400, detail="Ошибка: Неверный формат файла. Требуется DICOM.")
+
+        # Обрабатываем DICOM файл с использованием preprocess_dicom
+        dicom = pydicom.dcmread(file_path)
+        try:
+            pil_image = ImageProcessor.preprocess_dicom(dicom)
+        except ValueError as e:
+            os.remove(file_path)  # Удаляем неверный файл
+            raise HTTPException(status_code=400, detail=f"Ошибка при обработке DICOM: {str(e)}")
+
+        # Сохраняем изображение как PNG в папку uploads
+        png_filename = os.path.join(UPLOAD_DIR, f"{file.filename.split('.')[0]}.png")
+        pil_image.save(png_filename, format="PNG")
+
+        # Преобразуем изображение в тензор (если нужно)
+        image_processor = ImageProcessor()
+        tensor_image = image_processor(pil_image)
+
     elif file.filename.lower().endswith('.pdf'):
         if not is_valid_pdf(file_path):
             os.remove(file_path)  # Удаляем неверный файл
