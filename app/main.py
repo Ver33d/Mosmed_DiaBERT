@@ -20,17 +20,41 @@ cv2.setNumThreads(0)
 app = FastAPI()
 
 # Подключаем шаблоны Jinja2
-templates = Jinja2Templates(directory="templates")
+#templates = Jinja2Templates(directory="templates")
 
-UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
+base_dir = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(base_dir, "../templates"))
+templates_dir = os.path.join(base_dir, "../templates")
+
+
+# UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
+#
+# static = os.path.join(os.getcwd(), "static")
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Строим пути относительно base_dir (без начального /)
+static = os.path.join(base_dir, "../static")
+UPLOAD_DIR = os.path.join(base_dir, "../uploads")
+UPLOAD_FOLDER = os.path.join(base_dir, "../uploaded_files")
+
+
+print("base_dir :",static)
+print("base_dir :",UPLOAD_DIR)
+
+
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 # Подключаем статические файлы (CSS и JS)
-app.mount("/static", StaticFiles(directory='static'), name="static")
+app.mount("/static", StaticFiles(directory=static), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Путь для хранения загруженных файлов
-UPLOAD_FOLDER = 'uploaded_files'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# UPLOAD_FOLDER = 'uploaded_files'
+#os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 # Проверка на правильность формата DICOM
@@ -134,6 +158,9 @@ class ImageProcessor:
 # Главная страница с формой загрузки
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    logging.debug("Запрос на главную страницу")
     return templates.TemplateResponse("index.html", {"request": request})
 
 
@@ -188,7 +215,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.post("/process/")
 async def process_image(request: Request, file: UploadFile = File(...), options: List[str] = Form(...)):
-    uploaded_file_path = 'uploads/1.png'
+    uploaded_file_path = '../uploads/1.png'
     uploaded_file_path_2 = os.path.join(UPLOAD_FOLDER, file.filename)
     options = options[0]
     options = json.loads(options)
@@ -196,53 +223,78 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
     # Собираем информацию, которую нужно будет показать на странице
     result = {}
     if options[0] == "on":
-        # url = "https://28b9-193-41-143-66.ngrok-free.app/predict_proba_clav_fracture"
-        # files = {'file': open(uploaded_file_path_2, 'rb')}
-        # response = requests.post(url, files=files)
-        # response_json = response.json()
-        # print("response_json : ", response_json)
-        #
-        # # Извлекаем вероятность из ответа
-        # probability = response_json.get('probability', 0)
-        # print("probability1 : ", probability)
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_proba_clav_fracture/"
+        files = {'file': open(uploaded_file_path_2, 'rb')}
+        response = requests.post(url, files=files)
+        response_json = response.json()
+
+        # Извлекаем вероятность из ответа
+        probability = response_json.get('probability', 0)
+        # Формируем строку и записываем в переменную
+        result['clavicle_fracture'] = f"Перелом ключицы обнаружен - вероятность {probability:.2f}"
+
+    if options[1] == "on":
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
+        files = {'file': open(uploaded_file_path_2, 'rb')}
+        response = requests.post(url, files=files)
+        response_json = response.json()
+
+        # Извлекаем вероятность из ответа
+        probability = response_json.get('probability', 0)
 
         # Формируем строку и записываем в переменную
-        # #result['clavicle_fracture'] = f"Перелом ключицы обнаружен - вероятность {probability:.2f}"
-
-        # Заглушка
-        print("Перелом ключицы обнаружен - вероятность ")
-        result['first'] = "Перелом ключицы обнаружен - вероятность "
-    if options[1] == "on":
-        # print("Во 2 ифе ")
-        # url = "https://28b9-193-41-143-66.ngrok-free.app/predict_proba_medimp"
-        # files = {'file': open(uploaded_file_path_2, 'rb')}
-        # response = requests.post(url, files=files)
-        # response_json = response.json()
-        # print("response_json : ", response_json)
-        # # Извлекаем вероятность из ответа
-        # probability = response_json.get('probability', 0)
-        # print("probability2 : ",probability)
-        # # Формируем строку и записываем в переменную
-        # result['clavicle_fracture'] = f"Наличие посторонних предметов обнаружено - вероятность {probability:.2f}"
-
-        # Заглушка
-        print("Наличие посторонних предметов обнаружено - вероятность ")
-        result['foreign_objects'] = "Наличие посторонних предметов обнаружено - вероятность "
+        result['clavicle_fracture'] = f"Наличие посторонних предметов обнаружено - вероятность {probability:.2f}"
 
     if options[2] == "on":
-        print("Обработка сегментации ключицы")
-        result['clavicle_segmentation'] = uploaded_file_path  # Путь к изображению
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_segmentation_clav_fracture/"
+        files = {'file': open(uploaded_file_path_2, 'rb')}
+        response = requests.post(url, files=files)
+
+        if response.status_code == 200:
+            # Генерируем имя для сохранённого файла (можно использовать уникальное имя)
+            file_name = 'clavicle_segmentation.png'
+
+            # Сохраняем изображение
+            saved_image_path = save_image_from_response(response, file_name)
+
+            # Указываем путь к сохранённому изображению в result
+            result['clavicle_segmentation'] = saved_image_path
+        else:
+            print(f"Ошибка при получении изображения: {response.status_code}")
+
     if options[3] == "on":
-        print("Обработка сегментации посторонних предметов")
-        result['foreign_objects_segmentation'] = uploaded_file_path  # Путь к изображению
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
+        files = {'file': open(uploaded_file_path_2, 'rb')}
+        response = requests.post(url, files=files)
+        response_json = response.json()
+
+        # Извлекаем вероятность из ответа
+        probability = response_json.get('probability', 0)
+        if (probability > 0.5):
+            url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_segmentation_medimp/"
+            files = {'file': open(uploaded_file_path_2, 'rb')}
+            response = requests.post(url, files=files)
+            # Проверяем, что запрос прошёл успешно
+            if response.status_code == 200:
+                # Генерируем имя для сохранённого файла (можно использовать уникальное имя)
+                file_name = 'clavicle_segmentation.png'
+
+                # Сохраняем изображение
+                saved_image_path = save_image_from_response(response, file_name)
+
+                # Указываем путь к сохранённому изображению в result
+                result['foreign_objects_segmentation'] = saved_image_path  # Путь к изображению
+
+            else:
+                print(f"Ошибка при получении изображения: {response.status_code}")
+        else:
+            pass
     if options[4] == "on":
-        print("Обработка описания посторонних предметов")
-        result['foreign_objects_description'] = 'Найден предмет. '
-        # result['foreign_objects_description'] = uploaded_file_path  # Путь к изображению
-    if options[5] == "on":
-        print("Генерация отчета")
-        result['generate_report'] = True  # Кнопка для генерации отчета
-    print("result ",result)
+        result['foreign_objects_description'] = 'Найден предмет, здесь будет подробное описание от LLM. '
+
+    # if options[5] == "on":
+    #     print("Генерация отчета")
+    #     result['generate_report'] = True  # Кнопка для генерации отчета
     # Возвращаем ответ в формате JSON
     return JSONResponse(content={"message": "Изображение успешно обработано", "result": result})
 
@@ -250,3 +302,18 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
 @app.get("/processed_image", response_class=HTMLResponse)
 async def processed_image(request: Request):
     return templates.TemplateResponse("process.html", {"request": request})
+
+
+# Функция для сохранения картинки
+def save_image_from_response(response, filename):
+    image_data = response.content  # Получаем байты изображения
+
+    file_path =  f"/uploads/{filename}"
+    with open(file_path, 'wb') as f:
+        f.write(image_data)  # Записываем байты в файл
+    return file_path  # Возвращаем путь к сохранённому файлу
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="localhost", port=8080)
