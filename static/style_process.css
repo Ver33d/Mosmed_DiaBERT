@@ -1,92 +1,137 @@
- /* Основные стили для страницы */
-    body {
-        font-family: Arial, sans-serif;
-        background: linear-gradient(135deg, #6e7f91, #ffffff); /* Градиентный фон */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        flex-direction: column;
-        text-align: center;
-    }
+/* Основные стили для страницы */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #6e7f91, #ffffff); /* Градиентный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    flex-direction: column;
+    text-align: center;
+}
 
-    /* Контейнер для страницы с результатами */
-    .result-container {
-        text-align: center;
-        width: 80%;
-        max-width: 600px;
-        padding: 20px;
-        border-radius: 15px; /* Округленные углы */
-        background-color: #ffffff;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Легкая тень */
-        transition: all 0.3s ease-in-out; /* Плавный переход */
-    }
+/* Контейнер для страницы с результатами */
+.result-container {
+    text-align: center;
+    width: 80%;
+    max-width: 900px;
+    padding: 20px;
+    border-radius: 15px; /* Округленные углы */
+    background-color: #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Легкая тень */
+    transition: all 0.3s ease-in-out; /* Плавный переход */
+}
 
-    .result-container:hover {
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); /* Увеличиваем тень при наведении */
-    }
+/* Эффект при наведении */
+.result-container:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); /* Увеличиваем тень при наведении */
+}
 
-    /* Заголовок */
-    h1 {
-        font-size: 24px;
-        color: #333;
-        margin-bottom: 20px;
-    }
+/* Заголовок */
+h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+}
 
-    /* Описание */
-    p {
-        font-size: 16px;
-        color: #555;
-        margin-bottom: 20px;
-    }
+/* Описание */
+p {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 20px;
+}
 
-    /* Ссылки */
-    a {
-        font-size: 16px;
-        color: #007bff;
-        text-decoration: none;
-        border: 1px solid #007bff;
-        padding: 10px 20px;
-        border-radius: 5px;
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
+/* Ссылки */
+a {
+    font-size: 16px;
+    color: #007bff;
+    text-decoration: none;
+    border: 1px solid #007bff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
 
-    a:hover {
-        background-color: #007bff;
-        color: white;
-    }
+a:hover {
+    background-color: #007bff;
+    color: white;
+}
 
-    /* Статус загрузки */
-    #upload-status {
-        margin-top: 20px;
-        font-size: 16px;
-        color: green;
-    }
+/* Статус загрузки */
+#upload-status {
+    margin-top: 20px;
+    font-size: 16px;
+    color: green;
+}
 
-    /* Контейнер для флажков */
-    #checkbox-container {
-        margin-top: 20px;
-        display: none;
-        text-align: left;
-        padding-left: 20px;
-    }
+/* Контейнер для флажков */
+#checkbox-container {
+    margin-top: 20px;
+    display: none;
+    text-align: left;
+    padding-left: 20px;
+}
 
-    #checkbox-container label {
-        display: block;
-        margin: 10px 0;
-        font-size: 14px;
-    }
+#checkbox-container label {
+    display: block;
+    margin: 10px 0;
+    font-size: 14px;
+}
 
-    /* Контейнер для изображения */
-    #image-container {
-        margin-top: 30px;
-    }
+/* Контейнер для изображения */
+#image-container {
+    margin-top: 30px;
+}
 
-    #image-container img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 20px auto;
-        border-radius: 10px; /* Округленные углы для изображения */
-    }
+#image-container img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    border-radius: 10px; /* Округленные углы для изображения */
+}
+
+/* Дополнительный стиль для улучшенного отображения */
+#result-container p, #result-container img {
+    margin-bottom: 20px;
+}
+.result-item {
+    margin-bottom: 15px;
+}
+.description-item {
+    font-style: italic;
+}
+
+/* Новые стили для двух изображений рядом */
+.image-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.image-row img {
+    width: 48%;
+    border-radius: 10px; /* Округленные углы для изображений */
+}
+
+/* Стиль для кнопки */
+form button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+form button:hover {
+    background-color: #0056b3;
+}
+
+form {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}

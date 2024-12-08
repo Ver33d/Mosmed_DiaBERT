@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import json
 import cv2
+import requests
 from fastapi.responses import JSONResponse
 from typing import List
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
@@ -14,7 +15,6 @@ from fastapi.staticfiles import StaticFiles
 from pydicom import FileDataset
 from PIL import Image
 
-
 cv2.setNumThreads(0)
 
 app = FastAPI()
@@ -22,9 +22,7 @@ app = FastAPI()
 # Подключаем шаблоны Jinja2
 templates = Jinja2Templates(directory="templates")
 
-
 UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
-
 
 # Подключаем статические файлы (CSS и JS)
 app.mount("/static", StaticFiles(directory='static'), name="static")
@@ -149,7 +147,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     # Сохраняем файл на сервере
     with open(file_path, "wb") as f:
-        print("file_path 1 ",file_path)
+        print("file_path 1 ", file_path)
         f.write(await file.read())
 
     # Обработка форматов
@@ -185,36 +183,68 @@ async def upload_file(file: UploadFile = File(...)):
         os.remove(file_path)  # Удаляем файл с неподдерживаемым форматом
         raise HTTPException(status_code=400, detail="Ошибка: Неподдерживаемый формат файла.")
 
-    return {"message": f"Файл успешно загружен!", "image_path": png_filename} #{file.filename}
+    return {"message": f"Файл успешно загружен!", "image_path": png_filename}  # {file.filename}
 
 
-# Эндпоинт для обработки изображения
 @app.post("/process/")
-async def process_image(file: UploadFile = File(...), options: List[str] = Form(...)):
-    # Получаем список выбранных флажков и файл
-    uploaded_file_path = os.path.join(UPLOAD_DIR, file.filename)
-    print("uploaded_file_path ", uploaded_file_path)
-    # with open(uploaded_file_path, "wb") as f:
-    #     f.write(await file.read())
+async def process_image(request: Request, file: UploadFile = File(...), options: List[str] = Form(...)):
+    uploaded_file_path = 'uploads/1.png'
+    uploaded_file_path_2 = os.path.join(UPLOAD_FOLDER, file.filename)
     options = options[0]
     options = json.loads(options)
-    print("options ", options)
 
+    # Собираем информацию, которую нужно будет показать на странице
+    result = {}
     if options[0] == "on":
-        print("Обработка классификации перелома ключицы")
+        # url = "https://28b9-193-41-143-66.ngrok-free.app/predict_proba_clav_fracture"
+        # files = {'file': open(uploaded_file_path_2, 'rb')}
+        # response = requests.post(url, files=files)
+        # response_json = response.json()
+        # print("response_json : ", response_json)
+        #
+        # # Извлекаем вероятность из ответа
+        # probability = response_json.get('probability', 0)
+        # print("probability1 : ", probability)
+
+        # Формируем строку и записываем в переменную
+        # #result['clavicle_fracture'] = f"Перелом ключицы обнаружен - вероятность {probability:.2f}"
+
+        # Заглушка
+        print("Перелом ключицы обнаружен - вероятность ")
+        result['first'] = "Перелом ключицы обнаружен - вероятность "
     if options[1] == "on":
-        print("Обработка классификации наличия предметов")
+        # print("Во 2 ифе ")
+        # url = "https://28b9-193-41-143-66.ngrok-free.app/predict_proba_medimp"
+        # files = {'file': open(uploaded_file_path_2, 'rb')}
+        # response = requests.post(url, files=files)
+        # response_json = response.json()
+        # print("response_json : ", response_json)
+        # # Извлекаем вероятность из ответа
+        # probability = response_json.get('probability', 0)
+        # print("probability2 : ",probability)
+        # # Формируем строку и записываем в переменную
+        # result['clavicle_fracture'] = f"Наличие посторонних предметов обнаружено - вероятность {probability:.2f}"
+
+        # Заглушка
+        print("Наличие посторонних предметов обнаружено - вероятность ")
+        result['foreign_objects'] = "Наличие посторонних предметов обнаружено - вероятность "
+
     if options[2] == "on":
         print("Обработка сегментации ключицы")
+        result['clavicle_segmentation'] = uploaded_file_path  # Путь к изображению
     if options[3] == "on":
         print("Обработка сегментации посторонних предметов")
+        result['foreign_objects_segmentation'] = uploaded_file_path  # Путь к изображению
     if options[4] == "on":
         print("Обработка описания посторонних предметов")
+        result['foreign_objects_description'] = 'Найден предмет. '
+        # result['foreign_objects_description'] = uploaded_file_path  # Путь к изображению
     if options[5] == "on":
         print("Генерация отчета")
-
+        result['generate_report'] = True  # Кнопка для генерации отчета
+    print("result ",result)
     # Возвращаем ответ в формате JSON
-    return JSONResponse(content={"message": "Изображение успешно обработано"}, status_code=200)
+    return JSONResponse(content={"message": "Изображение успешно обработано", "result": result})
 
 
 @app.get("/processed_image", response_class=HTMLResponse)

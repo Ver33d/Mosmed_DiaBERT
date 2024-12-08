@@ -138,6 +138,10 @@
                 // Дополнительные действия после успешной обработки
 <!--                imageContainer.html(`<img src="${response.image_path}" alt="Processed Image" />`);-->
 <!--                console.log("Обработанные флажки:", response.results); // Логируем результаты обработки-->
+                // Сохраняем результат в sessionStorage
+
+                sessionStorage.setItem('result', JSON.stringify(response.result));
+
                 // Редирект на другую страницу после успешной обработки
                 window.location.href = "/processed_image"; // Переход на страницу с результатами обработки
             },

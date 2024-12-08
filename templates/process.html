@@ -5,11 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Результаты обработки изображения</title>
     <link href="static/style_process.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <h1>Изображение было успешно обработано!</h1>
-    <p>Здесь будут отображаться результаты обработки изображения.</p>
-    <p>Вы можете добавить логику для отображения изображений и других данных по вашему усмотрению.</p>
-    <a href="/">Перейти на главную страницу</a>
+    <h1>Внимание! Результат получен при поддержке алгоритма искусственного интеллекта.</h1>
+
+    <div id="result-container">
+        <!-- Здесь будет отображаться результат обработки -->
+    </div>
+
+    <p><a href="/">Перейти на главную страницу</a></p>
+    <button id="generate-report-btn">Сгенерировать отчет</button>
+
+    <script>
+
+        // Получаем данные из sessionStorage
+        const result = JSON.parse(sessionStorage.getItem('result'));
+        console.log(result);
+        if (result) {
+            let resultHtml = '';
+
+            // Проверяем и выводим соответствующие результаты
+            if (result.first) {
+                resultHtml += `<div class="result-item"><p>${result.first}</p></div>`;
+            }
+
+            if (result.foreign_objects) {
+                resultHtml += `<div class="result-item"><p>${result.foreign_objects}</p></div>`;
+            }
+
+            // Если оба изображения существуют, отображаем их рядом
+            let imagesHtml = '';
+            if (result.clavicle_segmentation && result.foreign_objects_segmentation) {
+                imagesHtml = `
+                    <div class="image-row">
+                        <div>
+                            <p>Сегментация ключицы:</p>
+                            <img src="${result.clavicle_segmentation}" alt="Clavicle Segmentation">
+                        </div>
+                        <div>
+                            <p>Сегментация посторонних предметов:</p>
+                            <img src="${result.foreign_objects_segmentation}" alt="Foreign Objects Segmentation">
+                        </div>
+                    </div>
+                `;
+            } else {
+                if (result.clavicle_segmentation) {
+                    imagesHtml += `
+                        <div class="result-item">
+                            <p>Сегментация ключицы:</p>
+                            <img src="${result.clavicle_segmentation}" alt="Clavicle Segmentation">
+                        </div>
+                    `;
+                }
+                if (result.foreign_objects_segmentation) {
+                    imagesHtml += `
+                        <div class="result-item">
+                            <p>Сегментация посторонних предметов:</p>
+                            <img src="${result.foreign_objects_segmentation}" alt="Foreign Objects Segmentation">
+                        </div>
+                    `;
+                }
+            }
+
+            resultHtml += imagesHtml;
+
+            // Описание посторонних предметов
+            if (result.foreign_objects_description) {
+                resultHtml += `<div class="result-item"><p>Описание посторонних предметов:</p>`;
+                if (Array.isArray(result.foreign_objects_description)) {
+                    result.foreign_objects_description.forEach(item => {
+                        resultHtml += `<p class="description-item">${item}</p>`;
+                    });
+                } else {
+                    resultHtml += `<p class="description-item">${result.foreign_objects_description}</p>`;
+                }
+                resultHtml += `</div>`;
+            }
+
+            // Вставляем результат на страницу
+            document.getElementById('result-container').innerHTML = resultHtml;
+        } else {
+            document.getElementById('result-container').innerHTML = '<p>Не удалось загрузить результаты обработки.</p>';
+        }
+
+        // Генерация отчета в PDF
+            document.getElementById('generate-report-btn').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+             doc.addFileToVFS('Roboto-Regular.ttf', robotoFontBase64);
+             doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+             doc.setFont('Roboto');
+<!--            // Устанавливаем шрифт Times (поддерживает кириллицу)-->
+<!--            doc.setFont("times", "normal");-->
+
+            // Заголовок
+            doc.setFontSize(18);
+            doc.text("Внимание! Результат получен при поддержке алгоритма искусственного интеллекта.", 10, 20);
+
+            // Перелом ключицы
+            if (result.clavicle_fracture) {
+                doc.setFontSize(14);
+                doc.text(`Перелом ключицы обнаружен: ${result.clavicle_fracture}`, 10, 30);
+            }
+
+            // Наличие посторонних предметов
+            if (result.foreign_objects) {
+                doc.setFontSize(14);
+                doc.text(`Наличие посторонних предметов обнаружено: ${result.foreign_objects}`, 10, 40);
+            }
+
+            // Сегментации изображений
+            if (result.clavicle_segmentation) {
+                doc.setFontSize(14);
+                doc.text("Сегментация ключицы:", 10, 50);
+                doc.addImage(result.clavicle_segmentation, 'JPEG', 10, 55, 180, 100); // Уменьшаем размер
+            }
+            if (result.foreign_objects_segmentation) {
+                doc.setFontSize(14);
+                doc.text("Сегментация посторонних предметов:", 10, 160);
+                doc.addImage(result.foreign_objects_segmentation, 'JPEG', 10, 165, 180, 100); // Уменьшаем размер
+            }
+
+            // Описание посторонних предметов
+            if (result.foreign_objects_description) {
+                doc.setFontSize(14);
+                doc.text("Описание посторонних предметов:", 10, 270);
+                if (Array.isArray(result.foreign_objects_description)) {
+                    result.foreign_objects_description.forEach((desc, index) => {
+                        doc.text(`${index + 1}. ${desc}`, 10, 280 + (index * 10));
+                    });
+                } else {
+                    doc.text(result.foreign_objects_description, 10, 280);
+                }
+            }
+
+            // Скачивание PDF
+            doc.save('отчет.pdf');
+        });
+    </script>
 </body>
 </html>
