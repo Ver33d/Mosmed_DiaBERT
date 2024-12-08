@@ -8,10 +8,11 @@
         height: 100vh;
         margin: 0;
         flex-direction: column;
+        text-align: center;
     }
 
-    /* Контейнер для загрузки файла */
-    .upload-container {
+    /* Контейнер для страницы с результатами */
+    .result-container {
         text-align: center;
         width: 80%;
         max-width: 600px;
@@ -22,29 +23,38 @@
         transition: all 0.3s ease-in-out; /* Плавный переход */
     }
 
-    .upload-container:hover {
+    .result-container:hover {
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); /* Увеличиваем тень при наведении */
     }
 
-    /* Зона для загрузки файла */
-    .upload-area {
-        border: 2px dashed #007bff;
-        padding: 30px;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.3s ease;
+    /* Заголовок */
+    h1 {
+        font-size: 24px;
+        color: #333;
         margin-bottom: 20px;
-        border-radius: 10px; /* Округленные углы */
     }
 
-    .upload-area:hover {
-        background-color: #f0f0f0;
-        transform: scale(1.05); /* Легкое увеличение зоны при наведении */
+    /* Описание */
+    p {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 20px;
     }
 
-    .upload-area p {
+    /* Ссылки */
+    a {
         font-size: 16px;
         color: #007bff;
-        margin: 0;
+        text-decoration: none;
+        border: 1px solid #007bff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    a:hover {
+        background-color: #007bff;
+        color: white;
     }
 
     /* Статус загрузки */
@@ -66,23 +76,6 @@
         display: block;
         margin: 10px 0;
         font-size: 14px;
-    }
-
-    /* Кнопка для обработки изображения */
-    #process-image {
-        margin-top: 30px;
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px; /* Округленные углы кнопки */
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-    }
-
-    #process-image:hover {
-        background-color: #0056b3;
-        transform: scale(1.05); /* Легкое увеличение кнопки при наведении */
     }
 
     /* Контейнер для изображения */
