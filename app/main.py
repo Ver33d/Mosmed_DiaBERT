@@ -317,4 +317,4 @@ def save_image_from_response(response, filename):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=7500)
+    uvicorn.run(app, host="localhost", port=80)
