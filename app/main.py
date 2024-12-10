@@ -34,6 +34,9 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Строим пути относительно base_dir (без начального /)
 static = os.path.join(base_dir, "static")
+if not os.path.exists(static):
+    os.makedirs(static)
+
 UPLOAD_DIR = os.path.join(base_dir, "uploads")
 UPLOAD_FOLDER = os.path.join(base_dir, "uploaded_files")
 
