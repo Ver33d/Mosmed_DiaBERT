@@ -317,7 +317,3 @@ def save_image_from_response(response, filename):
     return file_path  # Возвращаем путь к сохранённому файлу
 
 
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="localhost", port=80)
