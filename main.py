@@ -311,7 +311,7 @@ async def processed_image(request: Request):
 def save_image_from_response(response, filename):
     image_data = response.content  # Получаем байты изображения
 
-    file_path = f"/uploads/{filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
     with open(file_path, 'wb') as f:
         f.write(image_data)  # Записываем байты в файл
     return file_path  # Возвращаем путь к сохранённому файлу
