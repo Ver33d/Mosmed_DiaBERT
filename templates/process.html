@@ -27,11 +27,11 @@
 
             // Проверяем и выводим соответствующие результаты
             if (result.clavicle_fracture) {
-                resultHtml += <div class="result-item"><p>${result.clavicle_fracture}</p></div>;
+                resultHtml += `<div class="result-item"><p>${result.clavicle_fracture}</p></div>`;
             }
 
             if (result.proba_medimp) {
-                resultHtml += <div class="result-item"><p>${result.proba_medimp}</p></div>;
+                resultHtml += `<div class="result-item"><p>${result.proba_medimp}</p></div>`;
             }
 
             // Если оба изображения существуют, отображаем их рядом
