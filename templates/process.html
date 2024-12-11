@@ -26,12 +26,12 @@
             let resultHtml = '';
 
             // Проверяем и выводим соответствующие результаты
-            if (result.first) {
-                resultHtml += `<div class="result-item"><p>${result.first}</p></div>`;
+            if (result.clavicle_fracture) {
+                resultHtml += <div class="result-item"><p>${result.clavicle_fracture}</p></div>;
             }
 
-            if (result.foreign_objects) {
-                resultHtml += `<div class="result-item"><p>${result.foreign_objects}</p></div>`;
+            if (result.proba_medimp) {
+                resultHtml += <div class="result-item"><p>${result.proba_medimp}</p></div>;
             }
 
             // Если оба изображения существуют, отображаем их рядом
