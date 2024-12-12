@@ -8,6 +8,12 @@
     <link href="static/styles.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Прелоадер, добавьте это в начало body -->
+    <div id="preloader" style="display:none;">
+        <div class="spinner"></div>
+        <p>Загрузка...</p>
+    </div>
+
     <div class="upload-container">
         <h1>Загрузите файл DICOM</h1>
         <div class="upload-area" id="upload-area">
@@ -42,6 +48,16 @@
     const checkboxContainer = $('#checkbox-container'); // Контейнер с флажками
 
     let uploadedFile; // Переменная для хранения загруженного файла
+
+      // Показываем прелоадер
+    function showPreloader() {
+        $('#preloader').show(); // Показываем загрузчик
+    }
+
+    // Скрываем прелоадер
+    function hidePreloader() {
+        $('#preloader').hide(); // Скрываем загрузчик
+    }
 
     // Drag-and-drop
     uploadArea.on('dragover', function(e) {
@@ -126,6 +142,9 @@
         formData.append("file", uploadedFile);
         formData.append("options", optionsJson); // Отправляем выбранные флажки как строку JSON
 
+        // Показать загрузчик при отправке запроса
+        showPreloader();
+
         $.ajax({
             url: '/process/', // Путь для обработки изображения
             type: 'POST',
@@ -133,6 +152,7 @@
             contentType: false,
             processData: false,
             success: function(response) {
+                hidePreloader(); // Скрыть загрузчик после получения ответа
                 statusDiv.text(response.message).css('color', 'green');
                 // Сохраняем результат в sessionStorage
                 sessionStorage.setItem('result', JSON.stringify(response.result));
@@ -140,8 +160,9 @@
                 window.location.href = "/processed_image"; // Переход на страницу с результатами обработки
             },
             error: function(xhr, status, error) {
+                hidePreloader(); // Скрыть загрузчик при ошибке
                 const response = JSON.parse(xhr.responseText);
-                statusDiv.text(response.detail).css('color', 'red');
+                $('#upload-status').text(response.detail).css('color', 'red');
             }
         });
     });
