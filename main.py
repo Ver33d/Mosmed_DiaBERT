@@ -59,20 +59,14 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 # os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Модифицированная функция сохранения изображения
-def save_image_from_response(response, original_filename, user_id=None):
+def save_image_from_response(response, original_filename):
     # Создаём уникальное имя файла
     unique_id = str(uuid.uuid4())
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename_parts = original_filename.rsplit('.', 1)
-    new_filename = f"{filename_parts[0]}_{timestamp}_{unique_id}.{filename_parts[1]}"
+    new_filename = f"{filename_parts[0]}_{timestamp}_{unique_id}.png"
 
-    # Создаём подпапку для пользователя, если указан user_id
-    if user_id:
-        user_folder = os.path.join(UPLOAD_DIR, str(user_id))
-        os.makedirs(user_folder, exist_ok=True)
-        file_path = os.path.join(user_folder, new_filename)
-    else:
-        file_path = os.path.join(UPLOAD_DIR, new_filename)
+    file_path = os.path.join(UPLOAD_DIR, new_filename)
 
     # Сохраняем файл
     with open(file_path, 'wb') as f:
@@ -83,7 +77,6 @@ def save_image_from_response(response, original_filename, user_id=None):
     return f"/uploads/{relative_path}"
 
 
-
 # Проверка на правильность формата DICOM
 def is_valid_dicom(file_path: str) -> bool:
     try:
@@ -91,6 +84,7 @@ def is_valid_dicom(file_path: str) -> bool:
         return True
     except Exception:
         return False
+
 
 class ImageProcessor:
     image_size = 518, 518
@@ -253,7 +247,6 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
         url = "https://d776-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
         files = {'file': open(uploaded_file_path_2, 'rb')}
         response = requests.post(url, files=files)
-        print("response : ", response)
         response_json = response.json()
 
         # Извлекаем вероятность из ответа
@@ -266,15 +259,11 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
         url = "https://d776-193-41-143-66.ngrok-free.app/predict_segmentation_clav_fracture/"
         files = {'file': open(uploaded_file_path_2, 'rb')}
         response = requests.post(url, files=files)
-
         if response.status_code == 200:
-            # Генерируем имя для сохранённого файла (можно использовать уникальное имя)
-            file_name = 'clavicle_segmentation.png'
-
             # Сохраняем изображение
             saved_image_path = save_image_from_response(
                 response,
-                'clavicle_segmentation.png',
+                'clavicle_segmentation',
             )
 
             # Указываем путь к сохранённому изображению в result
@@ -297,10 +286,12 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
             # Проверяем, что запрос прошёл успешно
             if response.status_code == 200:
                 # Генерируем имя для сохранённого файла (можно использовать уникальное имя)
-                file_name = 'clavicle_segmentation.png'
 
                 # Сохраняем изображение
-                saved_image_path = save_image_from_response(response, file_name)
+                saved_image_path = save_image_from_response(
+                    response,
+                    'predict_segmentation_medimp',
+                )
 
                 # Указываем путь к сохранённому изображению в result
                 result['foreign_objects_segmentation'] = saved_image_path  # Путь к изображению
@@ -310,12 +301,17 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
         else:
             pass
     if options[4] == "on":
-        result['foreign_objects_description'] = 'Найден предмет, здесь будет подробное описание от LLM. '
-
-    # if options[5] == "on":
-    #     print("Генерация отчета")
-    #     result['generate_report'] = True  # Кнопка для генерации отчета
-    # Возвращаем ответ в формате JSON
+        url = "https://d776-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
+        files = {'file': open(uploaded_file_path_2, 'rb')}
+        response = requests.post(url, files=files)
+        response_json = response.json()
+        probability = response_json.get('probability', 0)
+        if (probability > 0.5):
+            # Извлекаем вероятность из ответа
+            probability = response_json.get('probability', 0)
+            result['foreign_objects_description'] = 'Найден предмет, здесь будет подробное описание от LLM. '
+        else:
+            result['foreign_objects_description'] = 'Предмет не найден'
     print('result : ', result)
     return JSONResponse(content={"message": "Изображение успешно обработано", "result": result})
 
@@ -323,15 +319,3 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
 @app.get("/processed_image", response_class=HTMLResponse)
 async def processed_image(request: Request):
     return templates.TemplateResponse("process.html", {"request": request})
-
-
-# Функция для сохранения картинки
-def save_image_from_response(response, filename):
-    image_data = response.content  # Получаем байты изображения
-
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    with open(file_path, 'wb') as f:
-        f.write(image_data)  # Записываем байты в файл
-    return file_path  # Возвращаем путь к сохранённому файлу
-
-

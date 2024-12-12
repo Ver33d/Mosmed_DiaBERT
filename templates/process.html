@@ -91,17 +91,17 @@
 
         // Генерация отчета в PDF
             document.getElementById('generate-report-btn').addEventListener('click', function() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-             doc.addFileToVFS('Roboto-Regular.ttf', robotoFontBase64);
-             doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
-             doc.setFont('Roboto');
+<!--            const { jsPDF } = window.jspdf;-->
+<!--            const doc = new jsPDF();-->
+<!--             doc.addFileToVFS('Roboto-Regular.ttf', robotoFontBase64);-->
+<!--             doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');-->
+<!--             doc.setFont('Roboto');-->
 <!--            // Устанавливаем шрифт Times (поддерживает кириллицу)-->
 <!--            doc.setFont("times", "normal");-->
 
             // Заголовок
             doc.setFontSize(18);
-            doc.text("Внимание! Результат получен при поддержке алгоритма искусственного интеллекта.", 10, 20);
+            doc.text("Внимание! Результат получен c помощью алгоритма искусственного интеллекта.", 10, 20);
 
             // Перелом ключицы
             if (result.clavicle_fracture) {
@@ -121,6 +121,7 @@
                 doc.text("Сегментация ключицы:", 10, 50);
                 doc.addImage(result.clavicle_segmentation, 'JPEG', 10, 55, 180, 100); // Уменьшаем размер
             }
+
             if (result.foreign_objects_segmentation) {
                 doc.setFontSize(14);
                 doc.text("Сегментация посторонних предметов:", 10, 160);
@@ -141,7 +142,7 @@
             }
 
             // Скачивание PDF
-            doc.save('отчет.pdf');
+<!--            doc.save('отчет.pdf');-->
         });
     </script>
 </body>

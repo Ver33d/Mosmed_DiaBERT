@@ -26,7 +26,6 @@
             <label><input type="checkbox" id="clavicle-segmentation"> Сегментация ключицы</label><br>
             <label><input type="checkbox" id="foreign-objects-segmentation"> Сегментация посторонних предметов</label><br>
             <label><input type="checkbox" id="foreign-objects-description"> Описание посторонних предметов</label><br>
-<!--            <label><input type="checkbox" id="generate-report"> Генерация отчёта об исследовании</label><br>-->
         </div>
 
         <!-- Кнопка для обработки изображения -->
@@ -135,13 +134,8 @@
             processData: false,
             success: function(response) {
                 statusDiv.text(response.message).css('color', 'green');
-                // Дополнительные действия после успешной обработки
-<!--                imageContainer.html(`<img src="${response.image_path}" alt="Processed Image" />`);-->
-<!--                console.log("Обработанные флажки:", response.results); // Логируем результаты обработки-->
                 // Сохраняем результат в sessionStorage
-
                 sessionStorage.setItem('result', JSON.stringify(response.result));
-
                 // Редирект на другую страницу после успешной обработки
                 window.location.href = "/processed_image"; // Переход на страницу с результатами обработки
             },
