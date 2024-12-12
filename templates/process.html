@@ -102,11 +102,11 @@
             // Заголовок
             doc.setFontSize(18);
             doc.text("Внимание! Результат получен при поддержке алгоритма искусственного интеллекта.", 10, 20);
-            console.log("result.clavicle_fracture:", result.clavicle_fracture);
+
             // Перелом ключицы
             if (result.clavicle_fracture) {
                 doc.setFontSize(14);
-                doc.text("Перелом ключицы обнаружен: ${result.clavicle_fracture}", 10, 30);
+                doc.text(`Перелом ключицы обнаружен: ${result.clavicle_fracture}`, 10, 30);
             }
 
             // Наличие посторонних предметов
