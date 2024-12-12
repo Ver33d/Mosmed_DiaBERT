@@ -87,11 +87,11 @@
 
     /* Контейнер для изображения */
     #image-container {
-        margin-top: 30px;
+        margin-top: 10px;
     }
 
     #image-container img {
-        max-width: 100%;
+        max-width: 40%;
         height: auto;
         display: block;
         margin: 20px auto;
