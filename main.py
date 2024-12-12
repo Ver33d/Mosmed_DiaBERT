@@ -1,6 +1,5 @@
 import os
 import pydicom  # Для проверки DICOM
-import PyPDF2  # Для проверки PDF
 import torch
 import numpy as np
 import json
@@ -14,6 +13,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydicom import FileDataset
 from PIL import Image
+import uuid
+from datetime import datetime
 
 cv2.setNumThreads(0)
 
@@ -57,6 +58,31 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 # UPLOAD_FOLDER = 'uploaded_files'
 # os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Модифицированная функция сохранения изображения
+def save_image_from_response(response, original_filename, user_id=None):
+    # Создаём уникальное имя файла
+    unique_id = str(uuid.uuid4())
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename_parts = original_filename.rsplit('.', 1)
+    new_filename = f"{filename_parts[0]}_{timestamp}_{unique_id}.{filename_parts[1]}"
+
+    # Создаём подпапку для пользователя, если указан user_id
+    if user_id:
+        user_folder = os.path.join(UPLOAD_DIR, str(user_id))
+        os.makedirs(user_folder, exist_ok=True)
+        file_path = os.path.join(user_folder, new_filename)
+    else:
+        file_path = os.path.join(UPLOAD_DIR, new_filename)
+
+    # Сохраняем файл
+    with open(file_path, 'wb') as f:
+        f.write(response.content)
+
+    # Возвращаем относительный путь для использования в URL
+    relative_path = os.path.relpath(file_path, UPLOAD_DIR)
+    return f"/uploads/{relative_path}"
+
+
 
 # Проверка на правильность формата DICOM
 def is_valid_dicom(file_path: str) -> bool:
@@ -65,17 +91,6 @@ def is_valid_dicom(file_path: str) -> bool:
         return True
     except Exception:
         return False
-
-
-# Проверка на правильность формата PDF
-def is_valid_pdf(file_path: str) -> bool:
-    try:
-        with open(file_path, 'rb') as f:
-            reader = PyPDF2.PdfReader(f)
-            return len(reader.pages) > 0
-    except Exception:
-        return False
-
 
 class ImageProcessor:
     image_size = 518, 518
@@ -175,7 +190,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     # Сохраняем файл на сервере
     with open(file_path, "wb") as f:
-        print("file_path 1 ", file_path)
+        print("file_path 1", file_path)
         f.write(await file.read())
 
     # Обработка форматов
@@ -201,7 +216,7 @@ async def upload_file(file: UploadFile = File(...)):
         tensor_image = image_processor(pil_image)
 
         png_file_path = png_filename
-        print(" png_filename", png_filename)
+        print("png_filename", png_filename)
 
     elif file.filename.lower().endswith('.pdf'):
         if not is_valid_pdf(file_path):
@@ -257,7 +272,10 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
             file_name = 'clavicle_segmentation.png'
 
             # Сохраняем изображение
-            saved_image_path = save_image_from_response(response, file_name)
+            saved_image_path = save_image_from_response(
+                response,
+                'clavicle_segmentation.png',
+            )
 
             # Указываем путь к сохранённому изображению в result
             result['clavicle_segmentation'] = saved_image_path
