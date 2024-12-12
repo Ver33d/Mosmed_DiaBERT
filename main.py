@@ -20,11 +20,12 @@ cv2.setNumThreads(0)
 app = FastAPI()
 
 # Подключаем шаблоны Jinja2
-# templates = Jinja2Templates(directory="templates")
+#templates = Jinja2Templates(directory="templates")
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(base_dir, "../templates"))
 templates_dir = os.path.join(base_dir, "../templates")
+
 
 # UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
 #
@@ -37,8 +38,10 @@ static = os.path.join(base_dir, "../static")
 UPLOAD_DIR = os.path.join(base_dir, "../uploads")
 UPLOAD_FOLDER = os.path.join(base_dir, "../uploaded_files")
 
-print("base_dir :", static)
-print("base_dir :", UPLOAD_DIR)
+
+print("base_dir :",static)
+print("base_dir :",UPLOAD_DIR)
+
 
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
@@ -49,10 +52,9 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.mount("/static", StaticFiles(directory=static), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-
 # Путь для хранения загруженных файлов
 # UPLOAD_FOLDER = 'uploaded_files'
-# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+#os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 # Проверка на правильность формата DICOM
@@ -221,7 +223,7 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
     # Собираем информацию, которую нужно будет показать на странице
     result = {}
     if options[0] == "on":
-        url = "https://d776-193-41-143-66.ngrok-free.app/predict_proba_clav_fracture/"
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_proba_clav_fracture/"
         files = {'file': open(uploaded_file_path_2, 'rb')}
         response = requests.post(url, files=files)
         response_json = response.json()
@@ -232,20 +234,19 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
         result['clavicle_fracture'] = f"Перелом ключицы обнаружен - вероятность {probability:.2f}"
 
     if options[1] == "on":
-        url = "https://d776-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
         files = {'file': open(uploaded_file_path_2, 'rb')}
         response = requests.post(url, files=files)
-        print("response : ", response)
         response_json = response.json()
 
         # Извлекаем вероятность из ответа
         probability = response_json.get('probability', 0)
 
         # Формируем строку и записываем в переменную
-        result['proba_medimp'] = f"Наличие посторонних предметов обнаружено - вероятность {probability:.2f}"
+        result['clavicle_fracture'] = f"Наличие посторонних предметов обнаружено - вероятность {probability:.2f}"
 
     if options[2] == "on":
-        url = "https://d776-193-41-143-66.ngrok-free.app/predict_segmentation_clav_fracture/"
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_segmentation_clav_fracture/"
         files = {'file': open(uploaded_file_path_2, 'rb')}
         response = requests.post(url, files=files)
 
@@ -262,7 +263,7 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
             print(f"Ошибка при получении изображения: {response.status_code}")
 
     if options[3] == "on":
-        url = "https://d776-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
+        url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_proba_medimp/"
         files = {'file': open(uploaded_file_path_2, 'rb')}
         response = requests.post(url, files=files)
         response_json = response.json()
@@ -270,7 +271,7 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
         # Извлекаем вероятность из ответа
         probability = response_json.get('probability', 0)
         if (probability > 0.5):
-            url = "https://d776-193-41-143-66.ngrok-free.app/predict_segmentation_medimp/"
+            url = "https://a7f1-193-41-143-66.ngrok-free.app/predict_segmentation_medimp/"
             files = {'file': open(uploaded_file_path_2, 'rb')}
             response = requests.post(url, files=files)
             # Проверяем, что запрос прошёл успешно
@@ -295,7 +296,6 @@ async def process_image(request: Request, file: UploadFile = File(...), options:
     #     print("Генерация отчета")
     #     result['generate_report'] = True  # Кнопка для генерации отчета
     # Возвращаем ответ в формате JSON
-    print('result : ', result)
     return JSONResponse(content={"message": "Изображение успешно обработано", "result": result})
 
 
@@ -308,7 +308,7 @@ async def processed_image(request: Request):
 def save_image_from_response(response, filename):
     image_data = response.content  # Получаем байты изображения
 
-    file_path = f"/uploads/{filename}"
+    file_path =  f"/uploads/{filename}"
     with open(file_path, 'wb') as f:
         f.write(image_data)  # Записываем байты в файл
     return file_path  # Возвращаем путь к сохранённому файлу
@@ -316,5 +316,4 @@ def save_image_from_response(response, filename):
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(app, host="localhost", port=7500)
+    uvicorn.run(app, host="localhost", port=8080)
