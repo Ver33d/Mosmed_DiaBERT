@@ -35,7 +35,7 @@ python app/main.py
 
 ## Структура проекта
 ```
-yourproject/
+project/
 │
 ├── app/        
 │   └── main.py      # Основной серверный файл FastAPI
